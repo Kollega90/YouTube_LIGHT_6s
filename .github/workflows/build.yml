@@ -1,0 +1,38 @@
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+
+  - name: Build YouTube LIGHT
+    env:
+      IPA_URL: ${{ inputs.ipa_url }}
+      YTLITE_VERSION: ${{ inputs.ytlite_version }}
+    run: |
+      set -euo pipefail
+
+      git clone --depth 1 https://github.com/dayanch96/YTLite.git ytlite
+      cd ytlite
+
+      chmod +x build.sh
+
+      python3 ../scripts/build_light.py "$IPA_URL" "$YTLITE_VERSION"
+
+  - name: Find output IPA
+    id: output
+    run: |
+      set -euo pipefail
+      IPA="$(find . -type f -name '*.ipa' | head -n 1)"
+      test -n "$IPA"
+      echo "ipa=$IPA" >> "$GITHUB_OUTPUT"
+
+  - name: Upload IPA artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: YouTube_LIGHT_6s_v1
+      path: ${{ steps.output.outputs.ipa }}
+
+  - name: Create release
+    uses: softprops/action-gh-release@v2
+    with:
+      tag_name: youtube-light-6s-v1-${{ github.run_number }}
+      name: YouTube LIGHT 6s v1 #${{ github.run_number }}
+      files: ${{ steps.output.outputs.ipa }}
